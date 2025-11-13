@@ -1,6 +1,5 @@
 #include <conio.h>
 #include <bits/stdc++.h>
-#include <cstdlib>
 
 using namespace std;
 
@@ -121,7 +120,7 @@ void openContents(string opcion, FileProperties filesManager){
         }
     }else if(opcion == "t" &&filesManager.typeOfFile == FileType::TEXT){
 
-        cin >> textFilesMessages[filesManager.id];
+       getline(cin,textFilesMessages[filesManager.id]);
     }
 }
 
@@ -131,14 +130,14 @@ void printAndAskOptions(FileProperties filesManager){
     cout << "\t Opciones" << endl;
     cout << "\t Abrir archivo \t\t z" << endl;
     if(filesManager.typeOfFile == FileType::TEXT){
-    cout << "\t Editar Texto \t t" << endl;
+    cout << "\t Editar Texto \t\t t" << endl;
     }
     cout << "\t Borrar archivo \t d" << endl;
     cout << "\t Ver propiedades \t x" << endl;
 
     // Limpiar el buffer ANTES de usar ci
 
-    cin >> opcion;
+    getline(cin, opcion);
 
     openContents(opcion,filesManager);
     
