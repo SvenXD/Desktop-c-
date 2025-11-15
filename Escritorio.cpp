@@ -1,5 +1,10 @@
 #include <conio.h>
+#include <cstdlib>
 #include <bits/stdc++.h>
+#ifdef _WIN32 
+#include <Windows.h>
+#define SET_CONSOLE_UTF8 SetConsoleCP(CP_UTF8); SetConsoleOutputCP(CP_UTF8); //Set console output to UTF-8.
+#endif // _WIN32 
 
 using namespace std;
 
@@ -8,6 +13,7 @@ using namespace std;
 #define KEY_LEFT 75
 #define KEY_RIGHT 77
 #define KEY_ENTER 13
+#define KEY_ESC 27
 
 #define COLUMS 10
 #define FILES 5
@@ -21,6 +27,7 @@ enum class KeySelected{
     LEFT,
     RIGHT,
     ENTER,
+    ESC,
     NONE
 };
 
@@ -52,33 +59,33 @@ public:
 };
 
 void clearScreen() {
-    cout << endl << endl << endl << endl << endl << endl;
+    system("cls");
 }
 
 void setupDefaultFiles(FileProperties files[FILES][COLUMS]) {
     files[0][0].fileName = "Readme.txt";
     files[0][0].typeOfFile = FileType::TEXT;
     files[0][0].adminPriviledges = false;
-    files[0][0].fileIcon = "📝";
+    files[0][0].fileIcon = u8"📝";
     files[0][0].id = 0;
 
     files[1][0].fileName = "Documents";
     files[1][0].typeOfFile = FileType::FOLDER;
     files[1][0].adminPriviledges = false;
-    files[1][0].fileIcon = "📁";
+    files[1][0].fileIcon = u8"📁";
     
     files[2][0].fileName = "Photo.jpg";
     files[2][0].typeOfFile = FileType::IMG;
     files[2][0].adminPriviledges = false;
-    files[2][0].fileIcon = "🖼️";
+    files[2][0].fileIcon = u8"🖼️";
 
     files[4][0].fileName = "Trash Bin";
     files[4][0].typeOfFile = FileType::TRASH;
     files[4][0].adminPriviledges = true;
-    files[4][0].fileIcon = "🗑️";
+    files[4][0].fileIcon = u8"🗑️";
 }
 
-void checkAndPrintCellIcon(string desktop[FILES][COLUMS],int i, int j,FileProperties filesManager[FILES][COLUMS]){
+void checkAndPrintCellIcon(string desktop[FILES][COLUMS],int i, int j, FileProperties filesManager[FILES][COLUMS]){
     (filesManager[i][j].isEmpty() ? desktop[i][j] = "[ ]" : desktop[i][j] = filesManager[i][j].fileIcon);
 }
 
@@ -86,7 +93,7 @@ void printCursorLocation(string desktop[FILES][COLUMS], string cursor, int i, in
     desktop[i][j] = "[" + cursor + "]";
 }
 
-void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord,FileProperties filesManager[FILES][COLUMS]){
+void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord, FileProperties filesManager[FILES][COLUMS]){
     string cursor = " ";
     for(int i = 0; i<FILES; i++){
         for(int j = 0; j<COLUMS; j++){
@@ -111,36 +118,61 @@ void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord,FilePropert
     }
 }
 
-void openContents(string opcion, FileProperties filesManager){
+void openContents(string opcion, FileProperties &filesManager, int yCellCord, int xCellCord){
     if(opcion == "z"){
-        if(filesManager.typeOfFile == FileType::TEXT){
-            cout << "------------------------------------" << endl;
-            cout << textFilesMessages[filesManager.id] << endl;
-            cout << "------------------------------------" << endl;
+        if (filesManager.isEmpty()) {
+            string name;
+            cout << "Introduzca el nómbre de su archivo: ";
+            cin >> name;
+            filesManager.fileName = name;
+            filesManager.adminPriviledges = false;
+            if (name.substr(name.length() - 4) == ".txt") {
+                filesManager.typeOfFile = FileType::TEXT;
+                filesManager.id = yCellCord + xCellCord + (yCellCord*10);
+                filesManager.fileIcon = u8"📝";
+            }
+            cout << "Archivo creado con éxito!" << endl;
+        } else {
+            if(filesManager.typeOfFile == FileType::TEXT){
+                cout << textFilesMessages[filesManager.id] << endl;
+            }
         }
     }else if(opcion == "t" &&filesManager.typeOfFile == FileType::TEXT){
-
        getline(cin,textFilesMessages[filesManager.id]);
+    }else if(opcion == "d") {
+        cout << "Eliminando archivo..." << endl;
+        if(filesManager.typeOfFile == FileType::TEXT) 
+            textFilesMessages[filesManager.id] = "";
+        FileProperties fileEmpty;
+        filesManager = fileEmpty;
     }
 }
 
-void printAndAskOptions(FileProperties filesManager){
+
+void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCord){
     string opcion;
     cout << "___________________________________" << endl;
     cout << "\t Opciones" << endl;
-    cout << "\t Abrir archivo \t\t z" << endl;
-    if(filesManager.typeOfFile == FileType::TEXT){
-    cout << "\t Editar Texto \t\t t" << endl;
+    if (!filesManager.isEmpty()) {
+        cout << "\t Abrir archivo \t\t z" << endl;
+        if(filesManager.typeOfFile == FileType::TEXT){
+            cout << "\t Editar Texto \t\t t" << endl;
+        }
+        cout << "\t Borrar archivo \t d" << endl;
+        cout << "\t Ver propiedades \t x" << endl;   
+    } else {  
+        cout << "\t Crear archivo \t\t z" << endl;
     }
-    cout << "\t Borrar archivo \t d" << endl;
-    cout << "\t Ver propiedades \t x" << endl;
 
+    cout << "___________________________________" << endl;
     // Limpiar el buffer ANTES de usar ci
-
+    cout << "Introduzca la opción: " << endl;
     getline(cin, opcion);
-
-    openContents(opcion,filesManager);
     
+    cout << "------------------------------------" << endl;   
+    openContents(opcion, filesManager, yCellCord, xCellCord);
+    cout << "------------------------------------" << endl;
+    system("pause");
 }
 
 
@@ -173,6 +205,10 @@ KeySelected getCurrentDirection(){
             break;
         case KEY_ENTER:
             return KeySelected::ENTER;
+            break;
+        case KEY_ESC:
+            return KeySelected::ESC;
+            break;
         default:
             return KeySelected::NONE;
             break;
@@ -180,6 +216,9 @@ KeySelected getCurrentDirection(){
 }
 
 int main(){
+#ifdef _WIN32
+    SET_CONSOLE_UTF8
+#endif
 
 int xCellCoord = 1;
 int yCellCoord = 0;
@@ -197,8 +236,7 @@ for(int i = 0; i<5; i++){
 }
 
 setupDefaultFiles(filesManager);
-
-while (true){
+    do {
     if(keyboardReader!= KeySelected::ENTER){
         printDesktop(desktop,xCellCoord,yCellCoord,filesManager);
         keyboardReader = getCurrentDirection();
@@ -206,9 +244,10 @@ while (true){
     }else{
         desktopState = DesktopState::NAVEGATION;
         keyboardReader = KeySelected::NONE;
-        printAndAskOptions(filesManager[yCellCoord][xCellCoord]);
+        printAndAskOptions(filesManager[yCellCoord][xCellCoord], yCellCoord, xCellCoord);
     }
     calculateCellPosition(keyboardReader,xCellCoord,yCellCoord);
     clearScreen();
-    }
+    } while (keyboardReader != KeySelected::ESC);
+     
 }
