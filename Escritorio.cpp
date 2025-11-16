@@ -122,13 +122,14 @@ void openContents(string opcion, FileProperties &filesManager, int yCellCord, in
     if(opcion == "z"){
         if (filesManager.isEmpty()) {
             string name;
-            cout << "Introduzca el nómbre de su archivo: ";
-            cin >> name;
+            cout << "------------------------------------" << endl;   
+            cout << "Introduzca el nómbre de su archivo:" << endl;
+            getline(cin, name);
             filesManager.fileName = name;
             filesManager.adminPriviledges = false;
             if (name.substr(name.length() - 4) == ".txt") {
                 filesManager.typeOfFile = FileType::TEXT;
-                filesManager.id = yCellCord + xCellCord + (yCellCord*10);
+                filesManager.id = xCellCord + yCellCord*10 - (yCellCord == 4 ? 1 : 0);
                 filesManager.fileIcon = u8"📝";
             }
             cout << "Archivo creado con éxito!" << endl;
@@ -138,7 +139,7 @@ void openContents(string opcion, FileProperties &filesManager, int yCellCord, in
             }
         }
     }else if(opcion == "t" &&filesManager.typeOfFile == FileType::TEXT){
-       getline(cin,textFilesMessages[filesManager.id]);
+        getline(cin,textFilesMessages[filesManager.id]);
     }else if(opcion == "d") {
         cout << "Eliminando archivo..." << endl;
         if(filesManager.typeOfFile == FileType::TEXT) 
@@ -166,9 +167,8 @@ void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCo
 
     cout << "___________________________________" << endl;
     // Limpiar el buffer ANTES de usar ci
-    cout << "Introduzca la opción: " << endl;
+    cout << "Introduzca la opción:" << endl;
     getline(cin, opcion);
-    
     cout << "------------------------------------" << endl;   
     openContents(opcion, filesManager, yCellCord, xCellCord);
     cout << "------------------------------------" << endl;
@@ -248,6 +248,7 @@ setupDefaultFiles(filesManager);
     }
     calculateCellPosition(keyboardReader,xCellCoord,yCellCoord);
     clearScreen();
+    fflush(stdin);
     } while (keyboardReader != KeySelected::ESC);
      
 }
