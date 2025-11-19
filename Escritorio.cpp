@@ -1,12 +1,13 @@
 #include <conio.h>
 #include <cstdlib>
 #include <bits/stdc++.h>
-#ifdef _WIN32 
 #include <Windows.h>
-#define SET_CONSOLE_UTF8 SetConsoleCP(CP_UTF8); SetConsoleOutputCP(CP_UTF8); //Set console output to UTF-8.
-#endif // _WIN32 
 
 using namespace std;
+
+#define SET_CONSOLE_UTF8 SetConsoleCP(CP_UTF8); SetConsoleOutputCP(CP_UTF8); //Set console output to UTF-8.
+#ifdef _WIN32 
+#endif // _WIN32 
 
 #define KEY_UP 72
 #define KEY_DOWN 80
@@ -20,6 +21,9 @@ using namespace std;
 
 string fileTypeString[5] = {"Text","Folder","Calc","Img","None"};
 string textFilesMessages[49] = {"Hello World!"};
+bool isVscTerminal = true;
+
+// ======================= Enums =======================
 
 enum class KeySelected{
     UP,
@@ -45,6 +49,9 @@ enum class FileType{
     NONE
 };
 
+// ======================= Clase para archivos =======================
+
+
 class FileProperties{
 public:
     string fileName;
@@ -56,10 +63,25 @@ public:
     bool isEmpty(){
         return fileName.empty();
     }
+
+    void cloneValues(FileProperties &copy){
+        this->fileName = copy.fileName;
+        this->typeOfFile = copy.typeOfFile;
+        this->adminPriviledges = copy.adminPriviledges;
+        this->fileIcon = copy.fileIcon;
+        this->id = copy.id;
+        }
 };
+FileProperties trashCanFiles[5];
+
+// ======================= Funciones de chequeo y setup =======================
 
 void clearScreen() {
-    system("cls");
+    if (isVscTerminal) {
+        cout << endl << endl << endl << endl << endl << endl;
+    } else {
+        system("cls");
+    }
 }
 
 void setupDefaultFiles(FileProperties files[FILES][COLUMS]) {
@@ -85,12 +107,46 @@ void setupDefaultFiles(FileProperties files[FILES][COLUMS]) {
     files[4][0].fileIcon = u8"🗑️";
 }
 
+void checkTerminal(){
+        if(!isVscTerminal){
+#ifdef _WIN32
+    SET_CONSOLE_UTF8
+#endif
+    }
+}
+
+// ======================= Funciones de escritorio =======================
+
+
 void checkAndPrintCellIcon(string desktop[FILES][COLUMS],int i, int j, FileProperties filesManager[FILES][COLUMS]){
     (filesManager[i][j].isEmpty() ? desktop[i][j] = "[ ]" : desktop[i][j] = filesManager[i][j].fileIcon);
 }
 
 void printCursorLocation(string desktop[FILES][COLUMS], string cursor, int i, int j){
     desktop[i][j] = "[" + cursor + "]";
+}
+
+void showFileCharacteristics(int j, int i, FileProperties filesManager){
+    if(j+1 == COLUMS && i == 0){
+      cout << "\t" << filesManager.fileName;
+    }else if(j+1 == COLUMS && i == 1){
+      cout << "\t\t" << filesManager.fileIcon;
+    }else if(j+1 == COLUMS && i == 2){
+          //Placeholder will check if i will do stuff
+    }
+}
+
+void deleteFileSelected(FileProperties &filesManager){
+    for(int i = 0; i < 5; i++){
+        if(trashCanFiles[i].isEmpty()){
+            trashCanFiles->cloneValues(filesManager);
+        }
+    }
+        cout << "Eliminando archivo..." << endl;
+    if(filesManager.typeOfFile == FileType::TEXT) 
+        textFilesMessages[filesManager.id] = "";
+    FileProperties fileEmpty;
+    filesManager = fileEmpty;
 }
 
 void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord, FileProperties filesManager[FILES][COLUMS]){
@@ -106,13 +162,8 @@ void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord, FileProper
             }
             cout << desktop[i][j] << "  ";
 
-            if(j+1 == COLUMS && i == 0){
-              cout << "\t" << filesManager[yCord][xCord].fileName;
-            }else if(j+1 == COLUMS && i == 1){
-              cout << "\t\t" << filesManager[yCord][xCord].fileIcon;
-            }else if(j+1 == COLUMS && i == 2){
-                //Placeholder will check if i will do stuff
-            }
+            showFileCharacteristics(j,i,filesManager[yCord][xCord]);
+
         }
         cout <<endl;
     }
@@ -141,11 +192,7 @@ void openContents(string opcion, FileProperties &filesManager, int yCellCord, in
     }else if(opcion == "t" &&filesManager.typeOfFile == FileType::TEXT){
         getline(cin,textFilesMessages[filesManager.id]);
     }else if(opcion == "d") {
-        cout << "Eliminando archivo..." << endl;
-        if(filesManager.typeOfFile == FileType::TEXT) 
-            textFilesMessages[filesManager.id] = "";
-        FileProperties fileEmpty;
-        filesManager = fileEmpty;
+        deleteFileSelected(filesManager);
     }
 }
 
@@ -166,13 +213,14 @@ void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCo
     }
 
     cout << "___________________________________" << endl;
-    // Limpiar el buffer ANTES de usar ci
+
     cout << "Introduzca la opción:" << endl;
     getline(cin, opcion);
     cout << "------------------------------------" << endl;   
     openContents(opcion, filesManager, yCellCord, xCellCord);
     cout << "------------------------------------" << endl;
-    system("pause");
+
+    if(!isVscTerminal) system("pause");
 }
 
 
@@ -216,9 +264,8 @@ KeySelected getCurrentDirection(){
 }
 
 int main(){
-#ifdef _WIN32
-    SET_CONSOLE_UTF8
-#endif
+
+checkTerminal();
 
 int xCellCoord = 1;
 int yCellCoord = 0;
@@ -248,7 +295,7 @@ setupDefaultFiles(filesManager);
     }
     calculateCellPosition(keyboardReader,xCellCoord,yCellCoord);
     clearScreen();
-    fflush(stdin);
+    if(isVscTerminal)(stdin);
     } while (keyboardReader != KeySelected::ESC);
      
 }
