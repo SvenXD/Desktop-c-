@@ -19,8 +19,7 @@ using namespace std;
 #define COLUMS 10
 #define FILES 5
 
-string fileTypeString[5] = {"Text","Folder","Calc","Img","None"};
-string textFilesMessages[49] = {"Hello World!"};
+string textFilesMessages[50] = {"Hello World!"};
 bool isVscTerminal = true;
 
 enum class KeySelected{
@@ -33,21 +32,12 @@ enum class KeySelected{
     NONE
 };
 
-enum class DesktopState{
-    NAVEGATION,
-    COMMANDS
-};
-
 enum class FileType{
     TEXT,
-    FOLDER,
-    CALC,
-    IMG,
-    TRASH,
     NONE
 };
 
-class FileProperties{
+struct FileProperties{
 public:
     string fileName;
     FileType typeOfFile;
@@ -58,17 +48,7 @@ public:
     bool isEmpty(){
         return fileName.empty();
     }
-
-    void cloneValues(FileProperties &copy){
-        this->fileName = copy.fileName;
-        this->typeOfFile = copy.typeOfFile;
-        this->adminPriviledges = copy.adminPriviledges;
-        this->fileIcon = copy.fileIcon;
-        this->id = copy.id;
-    }
 };
-
-FileProperties trashCanFiles[5];
 
 void clearScreen() {
     if (isVscTerminal) {
@@ -84,21 +64,6 @@ void setupDefaultFiles(FileProperties files[FILES][COLUMS]) {
     files[0][0].adminPriviledges = false;
     files[0][0].fileIcon = u8"📝";
     files[0][0].id = 0;
-
-    files[1][0].fileName = "Documents";
-    files[1][0].typeOfFile = FileType::FOLDER;
-    files[1][0].adminPriviledges = false;
-    files[1][0].fileIcon = u8"📁";
-    
-    files[2][0].fileName = "Photo.jpg";
-    files[2][0].typeOfFile = FileType::IMG;
-    files[2][0].adminPriviledges = false;
-    files[2][0].fileIcon = u8"🖼️";
-
-    files[4][0].fileName = "Trash Bin";
-    files[4][0].typeOfFile = FileType::TRASH;
-    files[4][0].adminPriviledges = true;
-    files[4][0].fileIcon = u8"🗑️";
 }
 
 void checkTerminal(){
@@ -119,20 +84,15 @@ void printCursorLocation(string desktop[FILES][COLUMS], string cursor, int i, in
 
 void showFileCharacteristics(int j, int i, FileProperties filesManager){
     if(j+1 == COLUMS && i == 0){
-        cout << "\t" << filesManager.fileName;
+        cout << "\t\t" << filesManager.fileName;
     }else if(j+1 == COLUMS && i == 1){
-        cout << "\t\t" << filesManager.fileIcon;
-    }else if(j+1 == COLUMS && i == 2){
-        //Placeholder will check if i will do stuff
+        cout << "\t\t  " << filesManager.fileIcon;
+    }else if(j+1 == COLUMS && i == 2 && !filesManager.isEmpty()){
+        filesManager.adminPriviledges ? cout << "\t Tiene privilegios de administrador" : cout << "\t\t No tiene privilegios de administrador";
     }
 }
 
 void deleteFileSelected(FileProperties &filesManager){
-    for(int i = 0; i < 5; i++){
-        if(trashCanFiles[i].isEmpty()){
-            trashCanFiles->cloneValues(filesManager);
-        }
-    }
     cout << "Eliminando archivo..." << endl;
     if(filesManager.typeOfFile == FileType::TEXT) 
         textFilesMessages[filesManager.id] = "";
@@ -163,13 +123,13 @@ void openContents(string opcion, FileProperties &filesManager, int yCellCord, in
         if (filesManager.isEmpty()) {
             string name;
             cout << "------------------------------------" << endl;   
-            cout << "Introduzca el nómbre de su archivo:" << endl;
+            cout << "Introduzca el nombre de su archivo:" << endl;
             getline(cin, name);
             filesManager.fileName = name;
             filesManager.adminPriviledges = false;
             if (name.substr(name.length() - 4) == ".txt") {
                 filesManager.typeOfFile = FileType::TEXT;
-                filesManager.id = xCellCord + yCellCord*10 - (yCellCord == 4 ? 1 : 0);
+                filesManager.id = xCellCord + yCellCord*10;
                 filesManager.fileIcon = u8"📝";
             }
             cout << "Archivo creado con éxito!" << endl;
@@ -185,8 +145,7 @@ void openContents(string opcion, FileProperties &filesManager, int yCellCord, in
     }
 }
 
-void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCord){
-    string opcion;
+void selectWhatToPrint(FileProperties &filesManager, string &opcion){
     cout << "___________________________________" << endl;
     cout << "\t Opciones" << endl;
     if (!filesManager.isEmpty()) {
@@ -195,13 +154,21 @@ void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCo
             cout << "\t Editar Texto \t\t t" << endl;
         }
         cout << "\t Borrar archivo \t d" << endl;
-        cout << "\t Ver propiedades \t x" << endl;   
     } else {  
         cout << "\t Crear archivo \t\t z" << endl;
     }
+    
     cout << "___________________________________" << endl;
     cout << "Introduzca la opción:" << endl;
+
     getline(cin, opcion);
+}
+
+void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCord){
+    string opcion;
+
+    selectWhatToPrint(filesManager,opcion);
+
     cout << "------------------------------------" << endl;   
     openContents(opcion, filesManager, yCellCord, xCellCord);
     cout << "------------------------------------" << endl;
@@ -221,29 +188,21 @@ void calculateCellPosition(KeySelected currentDirection, int &xCellCord, int &yC
 }
 
 KeySelected getCurrentDirection(){
-    int c = 0;
-    switch((c=getch())) {
+    switch((getch())) {
         case KEY_UP:
             return KeySelected::UP;
-            break;
         case KEY_DOWN:
             return KeySelected::DOWN;
-            break;
         case KEY_LEFT:
             return KeySelected::LEFT;
-            break;
         case KEY_RIGHT:
             return KeySelected::RIGHT;
-            break;
         case KEY_ENTER:
             return KeySelected::ENTER;
-            break;
         case KEY_ESC:
             return KeySelected::ESC;
-            break;
         default:
             return KeySelected::NONE;
-            break;
     }
 }
 
@@ -254,7 +213,6 @@ int main(){
     string desktop[FILES][COLUMS];
     FileProperties filesManager[FILES][COLUMS];
     KeySelected keyboardReader = KeySelected::NONE;
-    DesktopState desktopState = DesktopState::NAVEGATION;
 
     for(int i = 0; i<5; i++){
         for(int j = 0; j<10; j++){
@@ -268,12 +226,11 @@ int main(){
             printDesktop(desktop,xCellCoord,yCellCoord,filesManager);
             keyboardReader = getCurrentDirection();
         }else{
-            desktopState = DesktopState::NAVEGATION;
             keyboardReader = KeySelected::NONE;
             printAndAskOptions(filesManager[yCellCoord][xCellCoord], yCellCoord, xCellCoord);
         }
         calculateCellPosition(keyboardReader,xCellCoord,yCellCoord);
         clearScreen();
-        if(isVscTerminal)(stdin);
+        if(isVscTerminal){stdin;}
     } while (keyboardReader != KeySelected::ESC);
 }
