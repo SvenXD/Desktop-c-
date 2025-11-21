@@ -15,6 +15,8 @@ using namespace std;
 #define KEY_RIGHT 77
 #define KEY_ENTER 13
 #define KEY_ESC 27
+#define KEY_Q 113
+#define KEY_Q_MAYUS 81
 
 #define COLUMS 10
 #define FILES 5
@@ -29,6 +31,7 @@ enum class KeySelected{
     RIGHT,
     ENTER,
     ESC,
+    Q,
     NONE
 };
 
@@ -45,11 +48,17 @@ public:
     string fileIcon;
     int id;
 
+    /**
+     * @brief Verifica si el archivo está vacío
+     */
     bool isEmpty(){
         return fileName.empty();
     }
 };
 
+/**
+ * @brief Limpia la pantalla
+ */
 void clearScreen() {
     if (isVscTerminal) {
         cout << endl << endl << endl << endl << endl << endl;
@@ -58,6 +67,9 @@ void clearScreen() {
     }
 }
 
+/**
+ * @brief Crea y configura archivos que vendran por defecto en el escritorio
+ */
 void setupDefaultFiles(FileProperties files[FILES][COLUMS]) {
     files[0][0].fileName = "Readme.txt";
     files[0][0].typeOfFile = FileType::TEXT;
@@ -66,6 +78,9 @@ void setupDefaultFiles(FileProperties files[FILES][COLUMS]) {
     files[0][0].id = 0;
 }
 
+/**
+ * @brief Configura la terminal para soporte UTF-8 si es necesario
+ */
 void checkTerminal(){
     if(!isVscTerminal){
 #ifdef _WIN32
@@ -74,14 +89,23 @@ void checkTerminal(){
     }
 }
 
+/**
+ * @brief Decide qué icono mostrar en cada celda del escritorio
+ */
 void checkAndPrintCellIcon(string desktop[FILES][COLUMS],int i, int j, FileProperties filesManager[FILES][COLUMS]){
     (filesManager[i][j].isEmpty() ? desktop[i][j] = "[ ]" : desktop[i][j] = filesManager[i][j].fileIcon);
 }
 
+/**
+ * @brief Muestra el cursor (a) en la posición actual del escritorio
+ */
 void printCursorLocation(string desktop[FILES][COLUMS], string cursor, int i, int j){
     desktop[i][j] = "[" + cursor + "]";
 }
 
+/**
+ * @brief Muestra las características del archivo seleccionado
+ */
 void showFileCharacteristics(int j, int i, FileProperties filesManager){
     if(j+1 == COLUMS && i == 0){
         cout << "\t\t" << filesManager.fileName;
@@ -92,6 +116,9 @@ void showFileCharacteristics(int j, int i, FileProperties filesManager){
     }
 }
 
+/**
+ * @brief Elimina el archivo seleccionado y limpia su contenido
+ */
 void deleteFileSelected(FileProperties &filesManager){
     cout << "Eliminando archivo..." << endl;
     if(filesManager.typeOfFile == FileType::TEXT) 
@@ -100,6 +127,9 @@ void deleteFileSelected(FileProperties &filesManager){
     filesManager = fileEmpty;
 }
 
+/**
+ * @brief Imprime el escritorio, archivos, cursor e información
+ */
 void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord, FileProperties filesManager[FILES][COLUMS]){
     string cursor = " ";
     for(int i = 0; i<FILES; i++){
@@ -118,19 +148,29 @@ void printDesktop(string desktop[FILES][COLUMS],int xCord, int yCord, FileProper
     }
 }
 
+/**
+ * @brief Abre la opción seleccionada del menú
+ */
 void openContents(string opcion, FileProperties &filesManager, int yCellCord, int xCellCord){
+    //Transforma todas las letras a minusculas
+    transform(opcion.begin(), opcion.end(), opcion.begin(), ::tolower);
+    
     if(opcion == "z"){
         if (filesManager.isEmpty()) {
             string name;
-            cout << "------------------------------------" << endl;   
+            cout << "====================================" << endl;   
             cout << "Introduzca el nombre de su archivo:" << endl;
             getline(cin, name);
             filesManager.fileName = name;
             filesManager.adminPriviledges = false;
-            if (name.substr(name.length() - 4) == ".txt") {
+            if (name.size() >= 4 && name.substr(name.size()-4) == ".txt") {
                 filesManager.typeOfFile = FileType::TEXT;
                 filesManager.id = xCellCord + yCellCord*10;
                 filesManager.fileIcon = u8"📝";
+            }else {
+            filesManager.typeOfFile = FileType::NONE;
+            filesManager.id = xCellCord + yCellCord*10;
+            filesManager.fileIcon = u8"📄";  
             }
             cout << "Archivo creado con éxito!" << endl;
         } else {
@@ -145,8 +185,11 @@ void openContents(string opcion, FileProperties &filesManager, int yCellCord, in
     }
 }
 
+/**
+ * @brief Muestra el menú de opciones disponibles para el archivo
+ */
 void selectWhatToPrint(FileProperties &filesManager, string &opcion){
-    cout << "___________________________________" << endl;
+    cout << "====================================" << endl;
     cout << "\t Opciones" << endl;
     if (!filesManager.isEmpty()) {
         cout << "\t Abrir archivo \t\t z" << endl;
@@ -158,23 +201,44 @@ void selectWhatToPrint(FileProperties &filesManager, string &opcion){
         cout << "\t Crear archivo \t\t z" << endl;
     }
     
-    cout << "___________________________________" << endl;
+    cout << "====================================" << endl;
     cout << "Introduzca la opción:" << endl;
 
     getline(cin, opcion);
 }
 
+/**
+ * @brief Maneja la interacción completa de opciones con el usuario
+ */
 void printAndAskOptions(FileProperties &filesManager, int yCellCord, int xCellCord){
     string opcion;
 
     selectWhatToPrint(filesManager,opcion);
 
-    cout << "------------------------------------" << endl;   
+    cout << "====================================" << endl;   
     openContents(opcion, filesManager, yCellCord, xCellCord);
-    cout << "------------------------------------" << endl;
+    cout << "====================================" << endl;
     if(!isVscTerminal) system("pause");
 }
 
+/**
+ * @brief Muestra instrucciones de como utilizar el escritorio
+ */
+void showInstructions(){
+    cout << "=== INSTRUCCIONES ===" << endl;
+    cout << "Flechas: Mover cursor" << endl;
+    cout << "Enter: Seleccionar archivo" << endl;
+    cout << "z: Crear/Abrir archivo" << endl;
+    cout << "t: Editar texto (archivos .txt)" << endl;
+    cout << "d: Eliminar archivo" << endl;
+    cout << "q: Ver instrucciones" << endl;
+    cout << "ESC: Salir" << endl;
+    cout << "=====================" << endl;
+}
+
+/**
+ * @brief Calcula la nueva posición del cursor según la dirección
+ */
 void calculateCellPosition(KeySelected currentDirection, int &xCellCord, int &yCellCord){
     if(currentDirection == KeySelected :: UP && yCellCord != 0){
         yCellCord -= 1;
@@ -187,6 +251,9 @@ void calculateCellPosition(KeySelected currentDirection, int &xCellCord, int &yC
     }
 }
 
+/**
+ * @brief Detecta y regresa la tecla presionada por el usuario
+ */
 KeySelected getCurrentDirection(){
     switch((getch())) {
         case KEY_UP:
@@ -201,6 +268,10 @@ KeySelected getCurrentDirection(){
             return KeySelected::ENTER;
         case KEY_ESC:
             return KeySelected::ESC;
+        case KEY_Q_MAYUS:
+            return KeySelected::Q;
+        case KEY_Q:
+            return KeySelected::Q;
         default:
             return KeySelected::NONE;
     }
@@ -221,8 +292,12 @@ int main(){
     }
 
     setupDefaultFiles(filesManager);
+    cout << "Presiona Q para ver instrucciones" << endl;
     do {
         if(keyboardReader!= KeySelected::ENTER){
+            if(keyboardReader == KeySelected::Q){
+                showInstructions();
+            }
             printDesktop(desktop,xCellCoord,yCellCoord,filesManager);
             keyboardReader = getCurrentDirection();
         }else{
